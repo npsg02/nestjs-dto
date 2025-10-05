@@ -10,6 +10,15 @@ export * from './dto/api-response.dto';
 export * from './client/api-client';
 export * from './client/query-builder';
 
+// Client - React Query
+export * from './client/react-query';
+
+// Client - GraphQL (Apollo)
+export * from './client/graphql';
+
+// Client - Socket.IO
+export * from './client/socket';
+
 // Utils
 export * from './utils/query-parser';
 
