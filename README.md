@@ -1,6 +1,11 @@
 # nestjs-dto
 
-A comprehensive NestJS library providing reusable DTOs (Data Transfer Objects) for REST API, GraphQL, and WebSocket applications. Includes a powerful client package with Axios for easy data querying with support for complex queries, pagination, filtering, and generic types.
+A comprehensive NestJS library providing reusable DTOs (Data Transfer Objects) for REST API, GraphQL, and WebSocket applications. Includes powerful client packages with:
+- **REST**: React Query integration for data fetching and caching
+- **GraphQL**: Apollo Client integration for GraphQL queries and mutations
+- **Socket.IO**: Real-time communication with React hooks
+
+Supports complex queries, pagination, filtering, and full TypeScript type safety.
 
 ## Features
 
@@ -12,6 +17,9 @@ A comprehensive NestJS library providing reusable DTOs (Data Transfer Objects) f
 - 🔧 **Query Builder** for constructing complex queries
 - 📊 **Multiple Filter Operators** (equals, greater than, like, in, between, etc.)
 - 🔄 **TypeORM and MongoDB** query parser utilities
+- ⚛️ **React Query Integration** for REST APIs with built-in hooks
+- 🔷 **Apollo Client Integration** for GraphQL with type-safe hooks
+- 🔌 **Socket.IO Client** with React hooks for real-time communication
 
 ## Installation
 
@@ -25,6 +33,23 @@ Make sure you have the following peer dependencies installed:
 
 ```bash
 npm install @nestjs/common @nestjs/graphql @nestjs/swagger class-validator class-transformer reflect-metadata
+```
+
+#### Optional Client Dependencies
+
+For React Query (REST):
+```bash
+npm install @tanstack/react-query react
+```
+
+For Apollo Client (GraphQL):
+```bash
+npm install @apollo/client graphql react
+```
+
+For Socket.IO Client:
+```bash
+npm install socket.io-client react
 ```
 
 ## Usage
@@ -227,6 +252,214 @@ const paginatedResponse = await client.getPaginated<User>('/users', 1, 10);
 const users: User[] = paginatedResponse.data.data;
 ```
 
+### React Query Integration (REST)
+
+The library provides built-in React Query hooks for seamless integration with React applications.
+
+#### Installation
+
+```bash
+npm install @tanstack/react-query
+```
+
+#### Setup
+
+```typescript
+import { ApiClient, ApiQueryProvider, createDefaultQueryClient } from 'nestjs-dto';
+
+const apiClient = new ApiClient({
+  baseURL: 'http://localhost:3000/api',
+});
+
+const queryClient = createDefaultQueryClient();
+
+function App() {
+  return (
+    <ApiQueryProvider queryClient={queryClient}>
+      <YourComponents />
+    </ApiQueryProvider>
+  );
+}
+```
+
+#### Usage
+
+```typescript
+import { useApiQuery, useApiPost } from 'nestjs-dto';
+
+function UsersList() {
+  // GET request with React Query
+  const { data, isLoading, error } = useApiQuery(
+    ['users'],
+    apiClient,
+    '/users',
+    { page: 1, limit: 10 }
+  );
+
+  // POST request
+  const createUser = useApiPost(apiClient, '/users', {
+    onSuccess: () => {
+      // Invalidate queries
+    },
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div>
+      <button onClick={() => createUser.mutate({ name: 'John' })}>
+        Create User
+      </button>
+      <ul>
+        {data?.data.data.map((user) => (
+          <li key={user.id}>{user.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+See [examples/react-query-usage.example.tsx](examples/react-query-usage.example.tsx) for complete examples.
+
+### GraphQL (Apollo Client) Integration
+
+Built-in Apollo Client integration for GraphQL APIs.
+
+#### Installation
+
+```bash
+npm install @apollo/client graphql
+```
+
+#### Setup
+
+```typescript
+import { createApolloClient, GraphQLProvider } from 'nestjs-dto';
+
+const apolloClient = createApolloClient({
+  uri: 'http://localhost:3000/graphql',
+  authToken: 'your-jwt-token',
+});
+
+function App() {
+  return (
+    <GraphQLProvider client={apolloClient}>
+      <YourComponents />
+    </GraphQLProvider>
+  );
+}
+```
+
+#### Usage
+
+```typescript
+import { gql } from '@apollo/client';
+import { useGraphQLQuery, useGraphQLMutation } from 'nestjs-dto';
+
+const GET_USERS = gql`
+  query GetUsers($page: Int!, $limit: Int!) {
+    users(page: $page, limit: $limit) {
+      data {
+        id
+        name
+        email
+      }
+      meta {
+        total
+        hasNext
+      }
+    }
+  }
+`;
+
+function UsersList() {
+  const { data, loading, error } = useGraphQLQuery(GET_USERS, {
+    variables: { page: 1, limit: 10 },
+  });
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <ul>
+      {data?.users.data.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+See [examples/graphql-usage.example.tsx](examples/graphql-usage.example.tsx) for complete examples.
+
+### Socket.IO Client Integration
+
+Real-time communication with Socket.IO client wrapper and React hooks.
+
+#### Installation
+
+```bash
+npm install socket.io-client
+```
+
+#### Setup
+
+```typescript
+import { createSocketClient, SocketProvider } from 'nestjs-dto';
+
+const socketClient = createSocketClient({
+  url: 'http://localhost:3000',
+  authToken: 'your-jwt-token',
+  options: {
+    reconnection: true,
+    reconnectionAttempts: 5,
+  },
+});
+
+function App() {
+  return (
+    <SocketProvider client={socketClient} autoConnect={true}>
+      <YourComponents />
+    </SocketProvider>
+  );
+}
+```
+
+#### Usage
+
+```typescript
+import { useSocket, useSocketEvent, useSocketEmit } from 'nestjs-dto';
+
+function ChatComponent() {
+  const { isConnected, emit } = useSocket(socketClient);
+  const [messages, setMessages] = useState([]);
+
+  // Listen to events
+  useSocketEvent(socketClient, 'message', (message) => {
+    setMessages((prev) => [...prev, message]);
+  });
+
+  // Send message
+  const handleSend = () => {
+    emit('send-message', { text: 'Hello!' });
+  };
+
+  return (
+    <div>
+      <div>Status: {isConnected ? 'Connected' : 'Disconnected'}</div>
+      {messages.map((msg, i) => (
+        <div key={i}>{msg.text}</div>
+      ))}
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}
+```
+
+See [examples/socket-usage.example.tsx](examples/socket-usage.example.tsx) for complete examples.
+
 ## API Reference
 
 ### DTOs
@@ -242,6 +475,31 @@ const users: User[] = paginatedResponse.data.data;
 
 - **ApiClient**: Main client class for API requests
 - **QueryBuilder**: Fluent interface for building complex queries
+
+#### React Query (REST)
+- **ApiQueryProvider**: React Query provider component
+- **createDefaultQueryClient**: Create configured QueryClient
+- **useApiQuery**: Hook for GET requests
+- **useApiPost**: Hook for POST requests
+- **useApiPut**: Hook for PUT requests
+- **useApiPatch**: Hook for PATCH requests
+- **useApiDelete**: Hook for DELETE requests
+
+#### GraphQL (Apollo)
+- **createApolloClient**: Create configured Apollo Client
+- **GraphQLProvider**: Apollo provider component
+- **useGraphQLQuery**: Type-safe query hook
+- **useGraphQLMutation**: Type-safe mutation hook
+- **useGraphQLSubscription**: Type-safe subscription hook
+
+#### Socket.IO
+- **SocketClient**: Socket.IO client wrapper class
+- **createSocketClient**: Create configured Socket client
+- **SocketProvider**: Socket provider component
+- **useSocket**: Hook for socket connection
+- **useSocketEvent**: Hook for listening to events
+- **useSocketEmit**: Hook for emitting events with state
+- **useSocketClient**: Hook to access socket from context
 
 ### Utils
 
