@@ -20,7 +20,12 @@
     "pagination",
     "query",
     "filter",
-    "typescript"
+    "typescript",
+    "react-query",
+    "apollo-client",
+    "socket.io",
+    "tanstack",
+    "react-hooks"
   ],
   "author": "",
   "license": "MIT",

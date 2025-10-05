@@ -458,7 +458,11 @@ function ChatComponent() {
 }
 ```
 
-See [examples/socket-usage.example.tsx](examples/socket-usage.example.tsx) for complete examples.
+See [examples/integrated-client.example.tsx](examples/integrated-client.example.tsx) for a complete working example.
+
+## Client Integration Guide
+
+For detailed documentation on using the client modules, see the [Client Integration Guide](CLIENT_GUIDE.md).
 
 ## API Reference
 
